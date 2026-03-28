@@ -1,7 +1,7 @@
 # 🌍 Project: Globe-Grid
 **A Procedural 2D Top-Down Exploration Engine**
 
-**Team CSUF:** Fabian Osegueda, Konner Rigby, Sophia Beker, Kevin Fuentes
+**Team The Jons:** Fabian Osegueda, Konner Rigby, Sophia Beker, Kevin Fuentes
 
 ### 📖 The Concept
 A generative $10 \times 10$ "World-in-a-Box" where every step is dreamed into existence in real-time. Navigate the globe-logic grid to find 3 artifacts and trigger the cinematic escape.

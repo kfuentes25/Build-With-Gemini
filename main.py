@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 from world_engine import GlobeGrid
 # Assuming you put the API functions in ai_manager.py
-from ai_manager import get_tile_image, get_background_music
+from agent_manager import get_tile_image, get_background_music
 
 load_dotenv()
 
@@ -16,7 +16,7 @@ async def play_game():
     print("Commands: north, south, east, west, quit")
 
     # 2. Start the Music (Lyria 3)
-    # get_background_music(theme) 
+    get_background_music(theme) 
 
     while len(game.inventory) < 3:
         action = input(f"\n[Pos: {game.x},{game.y}] Where to? ").lower()
