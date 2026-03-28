@@ -1,70 +1,97 @@
 extends Node3D
 
-var json_file_path = "res://layout.json"
-@export var block_size: float = 2.0
+@onready var start_menu = get_tree().current_scene.find_child("Menu", true, false)
+@onready var start_button = get_tree().current_scene.find_child("Start Button", true, false)
+@onready var next_button = get_tree().current_scene.find_child("Button", true, false)
+@onready var theme_input = get_tree().current_scene.find_child("LineEdit", true, false)
+@onready var player = get_tree().current_scene.find_child("Player", true, false)
+@onready var music_player = get_tree().current_scene.find_child("LevelMusicPlayer", true, false)
 
-var floor_texture
-var wall_texture
+var spacing = 8.0 
+var json_path = "res://layout.json"
+var prompt_path = "res://next_prompt.txt"
+var check_timer = 0.0
+var is_generating = false
 
 func _ready():
-	floor_texture = load("res://floor_tex.jpg")
-	wall_texture = load("res://wall_tex.jpg")
-	play_generated_music()
-	await get_tree().create_timer(1.0).timeout 
-	build_world()
+	set_process(false)
+	
+	# Force UI visibility
+	if start_menu: start_menu.show()
+	if theme_input: theme_input.show()
+	if next_button: next_button.show()
+	
+	# Force Sky Blue Background
+	var world_env = get_tree().current_scene.find_child("WorldEnvironment", true, false)
+	if world_env:
+		world_env.environment.background_mode = Environment.BG_COLOR
+		world_env.environment.background_color = Color("#87ceeb")
+	
+	if player and start_menu:
+		player.set_physics_process(false)
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		build_world()
+		play_music()
 
-func play_generated_music():
-	var music_path = "res://level_music.mp3"
-	if FileAccess.file_exists(music_path):
-		var file = FileAccess.open(music_path, FileAccess.READ)
-		var buffer = file.get_buffer(file.get_length())
-		var audio_stream = AudioStreamMP3.new()
-		audio_stream.data = buffer
-		audio_stream.loop = true 
-		var audio_player = AudioStreamPlayer.new()
-		audio_player.stream = audio_stream
-		add_child(audio_player)
-		audio_player.play()
+	if start_button: start_button.pressed.connect(_on_start_pressed)
+	if next_button: next_button.pressed.connect(_on_next_pressed)
+
+func play_music():
+	if music_player and FileAccess.file_exists("res://level_music.mp3"):
+		var file = FileAccess.open("res://level_music.mp3", FileAccess.READ)
+		var stream = AudioStreamMP3.new()
+		stream.data = file.get_buffer(file.get_length())
+		music_player.stream = stream
+		music_player.play()
+
+func _on_start_pressed():
+	if start_menu: start_menu.hide()
+	if player: player.set_physics_process(true)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _on_next_pressed():
+	if not theme_input or theme_input.text == "": return
+	var f = FileAccess.open(prompt_path, FileAccess.WRITE)
+	f.store_string(theme_input.text)
+	f.close()
+	if next_button: next_button.text = "Painting..."
+	is_generating = true
+	set_process(true)
+
+func _process(delta):
+	check_timer += delta
+	if check_timer >= 1.0:
+		check_timer = 0.0
+		if not FileAccess.file_exists(prompt_path):
+			get_tree().reload_current_scene()
 
 func build_world():
-	if not FileAccess.file_exists(json_file_path): return
-	var file = FileAccess.open(json_file_path, FileAccess.READ)
+	if not FileAccess.file_exists(json_path): return
+	var file = FileAccess.open(json_path, FileAccess.READ)
 	var data = JSON.parse_string(file.get_as_text())
-	var grid = data["grid"]
-	
-	var depth = grid.size()
-	var width = grid[0].size()
-	
-	# CENTERING LOGIC: Offsetting the start position by half the total width/depth
-	var offset_x = (width * block_size) / 2.0
-	var offset_z = (depth * block_size) / 2.0
-	
-	for z in range(depth):
-		for x in range(width):
-			var cell = grid[z][x]
-			spawn_block(x, z, float(cell[0]), String(cell[1]), offset_x, offset_z)
-		await get_tree().create_timer(0.01).timeout 
+	var grid = data.grid
+	var offset_x = (grid[0].size() * spacing) / 2.0
+	var offset_z = (grid.size() * spacing) / 2.0
+	var max_h = 0.0
 
-func spawn_block(x: int, z: int, h: float, hex_code: String, offset_x: float, offset_z: float):
-	var mesh_instance = MeshInstance3D.new()
-	var box_mesh = BoxMesh.new()
-	box_mesh.size = Vector3(block_size, h * block_size, block_size)
-	mesh_instance.mesh = box_mesh
+	for z in range(grid.size()):
+		for x in range(grid[0].size()):
+			var cell = grid[z][x]
+			var height = cell[0] * 4.5
+			if height > max_h: max_h = height
+			spawn_tile(cell[0], cell[1], Vector3(x*spacing-offset_x, 0, z*spacing-offset_z))
 	
-	# Applying the offset here centers the island
-	mesh_instance.position = Vector3((x * block_size) - offset_x, (h * block_size) / 2.0, (z * block_size) - offset_z)
-	
+	if player:
+		player.global_position = Vector3(0, max_h + 15.0, 0)
+
+func spawn_tile(h, col, pos):
+	var height = h * 4.5
+	var pillar = MeshInstance3D.new()
+	pillar.mesh = BoxMesh.new()
+	pillar.mesh.size = Vector3(spacing * 0.98, height, spacing * 0.98)
 	var mat = StandardMaterial3D.new()
-	mat.albedo_color = Color(hex_code) 
-	mat.albedo_texture = floor_texture if h <= 2.5 else wall_texture
-	mat.uv1_triplanar = true
-	mat.uv1_scale = Vector3(0.5, 0.5, 0.5) 
-	mesh_instance.material_override = mat
-	
-	var static_body = StaticBody3D.new()
-	var collision_shape = CollisionShape3D.new()
-	collision_shape.shape = BoxShape3D.new()
-	collision_shape.shape.size = box_mesh.size
-	static_body.add_child(collision_shape)
-	mesh_instance.add_child(static_body)
-	add_child(mesh_instance)
+	mat.albedo_color = Color(col)
+	pillar.material_override = mat
+	pillar.position = Vector3(pos.x, height / 2.0, pos.z)
+	add_child(pillar)
+	pillar.create_trimesh_collision()
