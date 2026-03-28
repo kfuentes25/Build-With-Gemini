@@ -43,19 +43,61 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 
 [node name="LevelMusicPlayer" type="AudioStreamPlayer" parent="." unique_id=173385136]
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1218433668]
+[node name="UI" type="CanvasLayer" parent="." unique_id=1218433668]
 
-[node name="Quit Button" type="Button" parent="CanvasLayer" unique_id=1712263728]
+[node name="Quit Button" type="Button" parent="UI" unique_id=1712263728]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -46.0
+offset_top = -31.0
+offset_right = 46.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Quit Game"
+script = ExtResource("3_fipmq")
+
+[node name="Menu" type="Panel" parent="UI" unique_id=378122779]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -46.0
-offset_top = -15.5
-offset_right = 46.0
-offset_bottom = 15.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Quit Game"
-script = ExtResource("3_fipmq")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/Menu" unique_id=321514582]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Start Button" type="Button" parent="UI/Menu/VBoxContainer" unique_id=232342344]
+layout_mode = 2
+text = "Start 
+"
+
+[node name="LineEdit" type="LineEdit" parent="UI/Menu/VBoxContainer" unique_id=1889606564]
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+
+[node name="Button" type="Button" parent="UI/Menu/VBoxContainer" unique_id=1509726087]
+layout_mode = 2
+text = "Next Map
+"
