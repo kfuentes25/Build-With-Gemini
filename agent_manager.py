@@ -1,53 +1,38 @@
 import os
 import time
+import io
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from PIL import Image
 
-# 1. LOAD THE KEY FIRST
 load_dotenv()
-
-# 2. INITIALIZE CLIENT
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# 🖼️ NANO BANANA 2 (Images)
-def get_tile_image(prompt):
-    print(f"🎨 Dreaming up tile...")
+def get_character_sprite(theme, filename="player_hero.png"):
+    print(f"🧙 Dreaming up a hero for the {theme}...")
+    prompt = (
+        f"A 2D top-down game sprite of a hero that belongs in a {theme}. "
+        f"White background, overhead view, centered, high-detail game art."
+    )
     response = client.models.generate_content(
         model="gemini-3.1-flash-image-preview",
         contents=[prompt],
-        config=types.GenerateContentConfig(
-            # Using 1:1 ratio for a square game grid
-            candidate_count=1
-        )
+        config=types.GenerateContentConfig(response_modalities=["Image"])
     )
-    # This returns a PIL Image object that main.py can .show()
-    return response.generated_images[0]
+    image_bytes = response.candidates[0].content.parts[0].inline_data.data
+    img = Image.open(io.BytesIO(image_bytes))
+    img.save(filename)
+    return img
 
-# 🎵 LYRIA 3 (Music)
-def get_background_music(theme):
-    print(f"🎵 Composing {theme} track...")
+def get_tile_image(prompt, filename="current_tile.png"):
+    print(f"🎨 Dreaming up the world...")
     response = client.models.generate_content(
-        model="lyria-3-clip-preview",
-        contents=[f"Looping {theme} game music, top-down RPG style, instrumental."],
-        config=types.GenerateContentConfig(response_modalities=["AUDIO"])
+        model="gemini-3.1-flash-image-preview",
+        contents=[prompt],
+        config=types.GenerateContentConfig(response_modalities=["Image"])
     )
-    # Save to a file so the team can play it
-    audio_path = "background_loop.mp3"
-    with open(audio_path, "wb") as f:
-        f.write(response.generated_audio[0].audio_bytes)
-    return audio_path
-
-# 🎥 VEO 3.1 (Video)
-def get_victory_video(theme):
-    print(f"🎬 Rendering cinematic finale...")
-    operation = client.models.generate_videos(
-        model="veo-3.1-generate-preview",
-        prompt=f"Cinematic 4K top-down view of a player escaping a {theme} world, radiant light.",
-    )
-    
-    # Video takes time to "cook," so we wait
-    while not operation.done:
-        time.sleep(1)
-        
-    return operation.result # This will be the video file/URL
+    image_bytes = response.candidates[0].content.parts[0].inline_data.data
+    img = Image.open(io.BytesIO(image_bytes))
+    img.save(filename)
+    return img

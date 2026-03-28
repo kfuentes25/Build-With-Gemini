@@ -1,50 +1,62 @@
 import os
-import asyncio
-from dotenv import load_dotenv
+import time
 from world_engine import GlobeGrid
-# Assuming you put the API functions in ai_manager.py
-from ai_manager import get_tile_image, get_background_music
+from agent_manager import get_tile_image, get_character_sprite, get_background_music
 
-load_dotenv()
-
-async def play_game():
-    # 1. Initialize the World
-    theme = os.getenv("GAME_THEME", "Bioluminescent Deep Sea")
-    game = GlobeGrid(size=10, theme=theme)
+def run_game():
+    print("\n🌟 --- THE ADAPTIVE GENERATIVE GLOBE --- 🌟")
     
-    print(f"--- Welcome to Globe-Grid: {theme} ---")
-    print("Commands: north, south, east, west, quit")
+    current_theme = input("Describe your starting biome: ")
+    
+    while True: # Master World Loop
+        # 1. GENERATE THE ADAPTIVE HERO
+        try:
+            hero_img = get_character_sprite(current_theme)
+            hero_img.show()
+            print(f"✅ An explorer of the {current_theme} has appeared!")
+            print("⏳ Cooling down AI for 10 seconds...")
+            time.sleep(10) # Prevent 429 error before first move
+        except Exception as e:
+            print(f"⚠️ Hero generation failed: {e}")
 
-    # 2. Start the Music (Lyria 3)
-    # get_background_music(theme) 
+        game = GlobeGrid(size=10, theme=current_theme)
+        print(f"\n🌍 --- ENTERING: {current_theme} --- 🌍")
+        
+        # 2. GENERATE MUSIC
+        try:
+            get_background_music(current_theme)
+        except:
+            pass
 
-    while len(game.inventory) < 3:
-        action = input(f"\n[Pos: {game.x},{game.y}] Where to? ").lower()
-        
-        if action == 'quit':
-            break
-        
-        if action in ["north", "south", "east", "west"]:
-            # Move on the Globe
-            state = game.move(action)
-            
-            # 3. Generate the Image (Nano Banana 2)
-            print(f"Generating view for {state['pos']}...")
-            img = get_tile_image(state['prompt'])
-            img.show() # This opens the photo on your Mac/Windows automatically
-            
-            # 4. Check for Items
-            if state['item'] and state['item'] not in game.inventory:
-                print(f"✨ FOUND ARTIFACT: {state['item']}!")
-                game.inventory.append(state['item'])
-                print(f"Inventory: {len(game.inventory)}/3")
+        # 3. NAVIGATION LOOP
+        while len(game.inventory) < 3:
+            print(f"\n📍 Position: ({game.x}, {game.y}) | Keys Found: {len(game.inventory)}/3")
+            move = input("Move (north, south, east, west) or 'quit': ").lower()
+
+            if move == 'quit': return
+            if move in ["north", "south", "east", "west"]:
+                state = game.move(move)
+                try:
+                    img = get_tile_image(state['prompt'])
+                    img.show()
+                    
+                    if state['item_found']:
+                        print(f"🔑 YOU FOUND A KEY: {state['item_found']}!")
+                        game.inventory.append(state['item_found'])
+                except Exception as e:
+                    print(f"⚠️ AI Quota Hit. Wait 15s. Error: {e}")
+                    time.sleep(15)
+            else:
+                print("Invalid command.")
+
+        # 4. WIN & RESET
+        print(f"\n🎉 ALL KEYS COLLECTED! You have escaped the {current_theme}!")
+        choice = input("Enter a new biome? (y/n): ")
+        if choice.lower() == 'y':
+            current_theme = input("Describe the next biome: ")
         else:
-            print("Invalid direction. Use north/south/east/west.")
-
-    if len(game.inventory) == 3:
-        print("\n🎉 ALL ARTIFACTS COLLECTED!")
-        print("Generating Veo Escape Cinematic...")
-        # get_victory_video(theme)
+            print("Safe travels, hero.")
+            break
 
 if __name__ == "__main__":
-    asyncio.run(play_game())
+    run_game()

@@ -1,22 +1,7 @@
-# --- Python Secrets ---
 .env
-
-# --- Virtual Environment ---
 venv/
-env/
-.venv/
-
-# --- Python Cache ---
 __pycache__/
-*.py[cod]
-*$py.class
-
-# --- OS Specific ---
-.DS_Store
-Thumbs.db
-
-# --- Game Assets (Generated) ---
-# We ignore these because they are generated in real-time
 *.png
-*.mp4
 *.mp3
+*.mp4
+.DS_Store

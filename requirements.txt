@@ -1,11 +1,4 @@
-# --- Google Gen AI Unified SDK (2026) ---
-# This single library handles Nano Banana, Lyria, Veo, and Live API
 google-genai
-
-# --- Environment & Security ---
-# Loads your GEMINI_API_KEY from the .env file
 python-dotenv
-
-# --- Image Processing ---
-# Allows main.py to handle and display the AI-generated map tiles
 Pillow
+pygame
